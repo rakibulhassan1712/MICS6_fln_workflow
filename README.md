@@ -1,2 +1,2 @@
-# MICS6 Foundational Learning
-Stata workflows for MICS6 foundational learning data management, FLN variable construction (grade-standardized, continuous, binary), and cluster-fixed effects models.
+# MICS6 Foundational Learning (Continuous, grade-standardized outcomes)
+These do-flies provide STATA workflows for MICS6 foundational learning data management, FLN variable construction (grade-standardized, continuous, binary), and cluster-fixed effects models. The original foundational literacy and numeracy (FLN) skills are critera-based binary outcomes. However, some of the econometric models like 2SLS, RD, fixed effects etc. require continous outcomes. In addition, it's relatively easier to interpret interaction terms when the outcome variables are continuous. Hence, these do-files provide a new calculation of foundational literacy and numeracy skills while keeping the UNICEF MICS6 FLN calculation logic same. 

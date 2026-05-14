@@ -1,13 +1,11 @@
-/* This Do-File is for calculating the foundational literacy and numeracy skills in alternative way (continuous and grade-standardized) */
+/* This Do-File is for calculating the foundational literacy and numeracy skills in alternative way (continuous and grade-standardized). The grade-standardized continuous outcomes are helpful to run models like fixed effects, 2SLS, RD etc. */
 
 /* Let us import the merged dataset that contains fs data from MICS6 2019 Bangladesh */
 
 use "D:\R\fln_research\fs_bd.dta"
 
 describe
-
 summarize
-
 keep if CB3 >= 7 & CB3 <= 14
 
 /*  We need to generate variables to measure numeracy and liiteracy skills if foundation learning module
@@ -46,63 +44,50 @@ Each sub step below relates to this */
 foreach num of numlist 1/72 {
 replace target=target+1 if FL19W`num'==0
 }
-
 gen target1= FL20A - FL20B if (FL20B<.)
 
 /*4b. Now, let's calculate the value for the numbers of correctly read words */
 
 replace read_corr=target/72 if (target!=.&FL10==1)
-
 replace read_corr1=target1/72 if (target1!=.&FL10==1)
-
 replace read_corr1=. if target1==.
 
 /*4c. For alit: Let's replace values using variable FL22A, FL22B and FL22C related with literal questions from FL module */
 
 replace alit= alit+1 if FL22A==1
-
 replace alit=alit+1 if FL22B==1
-
 replace alit=alit+1 if FL22C==1
 
 /*4d. For alnfe: Replace values using variables FL22D and FL22E related with inferential questions from FL module */
 
 replace alnfe=alnfe+1 if FL22D==1
-
 replace alnfe=alnfe+1 if FL22E==1
 
 /* Calculate foundational reading skills if all tasks are correctly performed  */
 
-replace readskill=alit + read_corr + alnfe
-
+replace readskill=alit/3 + read_corr + alnfe/2
 tab readskill
 
-replace readskill1 = alit + read_corr1 + alnfe 
+/* To ensure equal weights to the read_corr, alit, and alnfe items, as in the original calculation by UNICEF, we divided the alit, read_corr, and alnfe scores by total questions in the respective items. Thus, those items contribute equally to readskill. This is how we can get continuous foundational literacy skill variable keeping the same logic of MICS6 guidebook */
 
+replace readskill1 = alit/3 + read_corr1 + alnfe/2 
 replace readskill1=. if read_corr1==.
-
 tab readskill1, missing
 
-/* If a child can get a score of 5.90 or above, she/he has foundational literacy skills. That means, if a child reads 77 words (90%) correctly, answer three literal and two inferential questions correctly, she/he has foundational literacy skills. */
+/* If a child can get a score of 2.90 or above, she/he has foundational literacy skills. That means, if a child reads 77 words (90%) correctly, answer three literal and two inferential questions correctly, she/he has foundational literacy skills. */
 
 gen fls=.
-
-replace fls=1 if (readskill>=5.90 & readskill1!=.)
-
-replace fls=0 if readskill<5.90
-
+replace fls=1 if (readskill>=2.90 & readskill1!=.)
+replace fls=0 if readskill<2.90
 tab fls, missing
-
 tab fls
 
+/* The "fls" variable is the binary indicator of foundational literacy skills. This is exactly what MICS6 guidelines suggest */
+
 gen fls1=.
-
-replace fls1=1 if (readskill1>=5.90 & readskill1!=.)
-
-replace fls1=0 if readskill1<5.90
-
+replace fls1=1 if (readskill1>=2.90 & readskill1!=.)
+replace fls1=0 if readskill1<2.90
 tab fls1
-
 tab fls1, missing
 
 /*FOUNDATIONAL NUMERACY SKILLS
@@ -156,17 +141,17 @@ replace number_patt= number_patt + 1 if FL27E==1
 
 /* Calculate foundational numeracy skills if all tasks are correct */
 
-replace numbskill= number_read + number_dis + number_add + number_patt
-
+replace numbskill= number_read/6 + number_dis/5 + number_add/5 + number_patt/5
 tab numbskill
 
+/* Same as literacy skills, we divided the scores in each time by the number of questions in the item. Thus, each item contribute equally to the numeracy skills. */
+
 gen fns=.
-
-replace fns=1 if numbskill>=21
-
-replace fns=0 if numbskill<21
-
+replace fns=1 if numbskill>=4
+replace fns=0 if numbskill<4
 tab fns
+
+/* The "fls" variable is the binary indicator of foundational literacy skills. This is exactly what MICS6 guidelines suggest */
 
 /* Alternative calculation of foundational numeracy skills */
  
@@ -197,7 +182,7 @@ foreach var in FL27A FL27B FL27C FL27D FL27E {
     replace number_patt1 = number_patt1 + 1 if `var' == 1
 }
 * Compute total numeracy skill score
-replace numbskill1 = number_read1 + number_dis1 + number_add1 + number_patt1
+replace numbskill1 = number_read1/6 + number_dis1/5 + number_add1/5 + number_patt1/5
 
  
 * Set numbskill1 to missing if child attempted none (no 1 or 2 in any item)
@@ -206,46 +191,29 @@ foreach var in FL23A FL23B FL23C FL23D FL23E FL23F FL24A FL24B FL24C FL24D FL24E
     replace has_valid = has_valid | inlist(`var', 1, 2)
 }
 replace numbskill1 = . if has_valid == 0
-
 drop has_valid
-
 tab numbskill1
-
 tab numbskill1, missing
-
 gen fns1=.
-
-replace fns1=1 if numbskill1>=21 & numbskill1!=.
-
-replace fns1=0 if numbskill1<21
-
+replace fns1=1 if numbskill1>=4 & numbskill1!=.
+replace fns1=0 if numbskill1<4
 replace fns1=. if numbskill1==.
-
 tab fns1, missing
-
 tab fns1
-
 replace readskill=. if numbskill1==.
-
 replace numbskill=. if numbskill1==.
 
 
  *** Standardization of the outcome variable ***
 
 egen z_readskill=std(readskill)
-
 egen z_numbskill=std(numbskill)
-
 tab z_readskill
-
 tab z_numbskill
      
 	 ******** Grade-adjusted FLN skills ******
 
 egen gaz_litskill = std(readskill), by(grade)
-
 tab gaz_litskill	 
-
 egen gaz_numbskill = std(numbskill), by(grade)
-
 tab gaz_numbskill
